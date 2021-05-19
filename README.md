@@ -1,2 +1,3 @@
 # fake-ico
-An onboarding task for Gnosis
+
+Spend your precious `ETH` to get some `💩`!
