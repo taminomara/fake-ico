@@ -14,6 +14,11 @@ contract SCM {
     event Transfer(address indexed from, address indexed to, uint256 value);
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
+    constructor(uint256 totalSupply) {
+        _totalSupply = totalSupply;
+        _balances[msg.sender] = totalSupply;
+    }
+
     function name() public view returns (string) {
         return name;
     }
