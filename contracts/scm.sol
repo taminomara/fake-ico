@@ -17,6 +17,8 @@ contract SCM {
     constructor(uint256 totalSupply) {
         _totalSupply = totalSupply;
         _balances[msg.sender] = totalSupply;
+
+        emit Transfer(address(0x0), msg.sender, totalSupply);
     }
 
     function name() public view returns (string) {
