@@ -1,4 +1,6 @@
-pragma solidity ^0.8.4;
+// SPDX-License-Identifier: Unlicense
+
+pragma solidity ^0.7.0;
 
 import "./scm.sol";
 
@@ -45,7 +47,7 @@ contract ICO {
     mapping (address => uint256) private _contributions;
 
     // Convert ETH to SCM.
-    function toScm(uint256 eth) public pure returns (uint256 scm) {
+    function toScm(uint256 eth) public pure returns (uint256) {
         return eth * rate;
     }
 
@@ -53,7 +55,7 @@ contract ICO {
     function state() public view returns (State) {
         if (_left > 0) {
             return State.Ongoing;
-        } else if (now < finishTime()) {
+        } else if (block.timestamp < finishTime()) {
             return State.Closed;
         } else {
             return State.Finished;
@@ -115,7 +117,7 @@ contract ICO {
         _left -= funds;
 
         if (_left == 0) {
-            _closeTime = now;
+            _closeTime = block.timestamp;
             emit IcoClosed(finishTime());
         }
 
@@ -133,7 +135,9 @@ contract ICO {
         }
     }
 
-    // Claim purchased SCM.
+    // Claim purchased SCM. Returns number of transferred tokens.
+    // It is an error to call this function twice, or to call it if user's
+    // balance is zero.
     function claim() public returns (uint256) {
         require(state() == State.Finished, "ICO is not finished yet");
 
@@ -142,6 +146,8 @@ contract ICO {
         require(balance > 0, "no SCM tokens to claim");
         scm.transfer(msg.sender, balance);
 
-        return toScm;
+        _contributions[msg.sender] = 0;
+
+        return balance;
     }
 }
