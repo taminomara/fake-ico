@@ -3,11 +3,11 @@ pragma solidity ^0.8.4;
 // A simple implementation of the ERC20 interface for training purposes.
 // See https://eips.ethereum.org/eips/eip-20 for details.
 contract SCM {
-    string private _name = "Scam";
-    string private _symbol = "SCM";
-    uint8 private _decimals = 18;
+    string private constant _name = "Scam";
+    string private constant _symbol = "SCM";
+    uint8 private constant _decimals = 18;
 
-    uint256 private _totalSupply;
+    uint256 private constant _totalSupply;
     mapping (address => uint256) private _balances;
     mapping (address => mapping (address => uint256)) private _allowed;
 
