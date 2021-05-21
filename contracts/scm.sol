@@ -68,8 +68,8 @@ contract SCM {
             _allowed[from][msg.sender] -= value;
         }
 
-        _balances[from] += value;
-        _balances[to] -= value;
+        _balances[from] -= value;
+        _balances[to] += value;
 
         emit Transfer(from, to, value);
 

@@ -66,19 +66,48 @@ describe("SCM contract", async () => {
 
         describe("when recipient address is different from owner address", async () => {
             it("succeeds and transfers funds when balance is sufficient", async () => {
-
+                expect(await scm.balanceOf(owner.address))
+                    .to.equal(totalSupply);
+                expect(await scm.balanceOf(addr1.address))
+                    .to.equal(0);
+                await expect(scm.transfer(addr1.address, 10))
+                    .to.not.be.reverted;
+                expect(await scm.balanceOf(owner.address))
+                    .to.equal(totalSupply - 10);
+                expect(await scm.balanceOf(addr1.address))
+                    .to.equal(10);
             });
 
             it("emits an event on success", async () => {
-
+                await expect(scm.transfer(addr1.address, 10))
+                    .to.emit(scm, "Transfer")
+                    .withArgs(owner.address, addr1.address, 10);
             });
 
             it("reverts when balance is not sufficient", async () => {
-
+                await expect(scm.transfer(addr1.address, 1000))
+                    .to.be.revertedWith("not sufficient funds");
+                expect(await scm.balanceOf(owner.address))
+                    .to.equal(totalSupply);
+                expect(await scm.balanceOf(addr1.address))
+                    .to.equal(0);
             });
 
             it("reverts when balance is not sufficient after sufficient calls", async () => {
-
+                await expect(scm.transfer(addr1.address, 50))
+                    .to.not.be.reverted;
+                await expect(scm.transfer(addr1.address, 100))
+                    .to.be.revertedWith("not sufficient funds");
+                expect(await scm.balanceOf(owner.address))
+                    .to.equal(totalSupply - 50);
+                expect(await scm.balanceOf(addr1.address))
+                    .to.equal(50);
+                await expect(scm.transfer(addr1.address, 50))
+                    .to.not.be.reverted;
+                expect(await scm.balanceOf(owner.address))
+                    .to.equal(totalSupply - 100);
+                expect(await scm.balanceOf(addr1.address))
+                    .to.equal(100);
             });
         });
     });
@@ -219,10 +248,5 @@ describe("SCM contract", async () => {
                 });
             });
         });
-    });
-
-    describe("transfer", async () => {
-    });
-    describe("transferFrom", async () => {
     });
 });
