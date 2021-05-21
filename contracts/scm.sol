@@ -3,7 +3,7 @@
 pragma solidity ^0.7.0;
 
 // A simple implementation of the ERC20 interface for training purposes.
-// See https://eips.ethereum.org/eips/eip-20 for details.
+// See https://eips.ethereum.org/EIPS/eip-20 for details.
 contract SCM {
     string private constant _name = "Scam";
     string private constant _symbol = "SCM";
@@ -54,18 +54,13 @@ contract SCM {
 
     // Transfer tokens from caller's wallet to the given wallet.
     function transfer(address to, uint256 value) public returns (bool success) {
-        require(_balances[msg.sender] >= value, "not sufficient funds");
-
-        _balances[msg.sender] += value;
-        _balances[to] -= value;
-
-        emit Transfer(msg.sender, to, value);
-
-        return true;
+        return transferFrom(msg.sender, to, value);
     }
 
     // Transfer tokens from the given wallet to another wallet.
     function transferFrom(address from, address to, uint256 value) public returns (bool success) {
+        require(from != address(0), "sending from zero address");
+        require(to != address(0), "sending to zero address");
         require(_balances[from] >= value, "not sufficient funds");
 
         if (from != msg.sender) {

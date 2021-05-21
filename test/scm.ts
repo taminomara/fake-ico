@@ -1,7 +1,8 @@
 import {expect} from "chai";
 import {ethers} from "hardhat";
+import {describe} from "mocha";
 
-describe("SCM contract", function() {
+describe("SCM contract", async () => {
     const totalSupply = 100;
 
     let Scm;
@@ -11,27 +12,217 @@ describe("SCM contract", function() {
     let addr2;
     let addrs;
 
-    beforeEach(async function () {
+    beforeEach(async () => {
         Scm = await ethers.getContractFactory("SCM");
         [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
         scm = await Scm.deploy(totalSupply);
     });
 
-    describe("deploy", function () {
-        it("should provide basic information", async function() {
-            expect(await scm.name()).to.equal("Scam");
-            expect(await scm.symbol()).to.equal("SCM");
-            expect(await scm.decimals()).to.equal(18);
+    it("provides basic information", async () => {
+        expect(await scm.name()).to.equal("Scam");
+        expect(await scm.symbol()).to.equal("SCM");
+        expect(await scm.decimals()).to.equal(18);
+    });
+
+    it("provides the total supply of tokens", async () => {
+        expect(await scm.totalSupply()).to.equal(totalSupply);
+    });
+
+    it("assigns the total supply of tokens to the owner", async () => {
+        expect(await scm.balanceOf(owner.address)).to.equal(totalSupply);
+        expect(await scm.balanceOf(addr1.address)).to.equal(0);
+        expect(await scm.balanceOf(addr2.address)).to.equal(0);
+    });
+
+    describe("transfer from own address", async () => {
+        describe("when recipient address is zero", async () => {
+            it("reverts", async () => {
+                await expect(scm.transfer(ethers.constants.AddressZero, 10))
+                    .to.be.revertedWith("sending to zero address");
+            });
         });
 
-        it("should provide the total supply of tokens", async function() {
-            expect(await scm.totalSupply()).to.equal(totalSupply);
+        describe("when recipient address is same as owner address", async () => {
+            it("succeeds when balance is sufficient", async () => {
+                expect(await scm.balanceOf(owner.address))
+                    .to.equal(totalSupply);
+                await expect(scm.transfer(owner.address, 10))
+                    .to.not.be.reverted;
+                expect(await scm.balanceOf(owner.address))
+                    .to.equal(totalSupply);
+            });
+
+            it("emits an event on success", async () => {
+                await expect(scm.transfer(owner.address, 10))
+                    .to.emit(scm, "Transfer")
+                    .withArgs(owner.address, owner.address, 10);
+            });
+
+            it("reverts when balance is not sufficient", async () => {
+                await expect(scm.transfer(owner.address, 1000))
+                    .to.be.revertedWith("not sufficient funds");
+            });
         });
 
-        it("should assign the total supply of tokens to the owner", async function() {
-            expect(await scm.balanceOf(owner.address)).to.equal(totalSupply);
-            expect(await scm.balanceOf(addr1.address)).to.equal(0);
-            expect(await scm.balanceOf(addr2.address)).to.equal(0);
+        describe("when recipient address is different from owner address", async () => {
+            it("succeeds and transfers funds when balance is sufficient", async () => {
+
+            });
+
+            it("emits an event on success", async () => {
+
+            });
+
+            it("reverts when balance is not sufficient", async () => {
+
+            });
+
+            it("reverts when balance is not sufficient after sufficient calls", async () => {
+
+            });
         });
+    });
+
+    describe("transfer from other's address", async () => {
+        describe("when recipient address is zero", async () => {
+            it("reverts", async () => {
+
+            });
+        });
+
+        describe("when sender address is zero", async () => {
+            it("reverts", async () => {
+
+            });
+        });
+
+        describe("when recipient address is same as owner address", async () => {
+            describe("when allowance is sufficient", async () => {
+                it("succeeds when balance is sufficient", async () => {
+
+                });
+
+                it("emits an event on success", async () => {
+
+                });
+
+                it("reverts when balance is not sufficient", async () => {
+
+                });
+            });
+
+            describe("when allowance is not sufficient", async () => {
+                it("reverts when balance is sufficient", async () => {
+
+                });
+
+                it("reverts when balance is not sufficient", async () => {
+
+                });
+            });
+        });
+
+        describe("when recipient address is different from owner address", async () => {
+            describe("when allowance is sufficient", async () => {
+                it("succeeds when balance is sufficient", async () => {
+
+                });
+
+                it("emits an event on success", async () => {
+
+                });
+
+                it("reverts when balance is not sufficient", async () => {
+
+                });
+            });
+
+            describe("when allowance is not sufficient", async () => {
+                it("reverts when balance is sufficient", async () => {
+
+                });
+
+                it("reverts when balance is not sufficient", async () => {
+
+                });
+            });
+
+            describe("when allowance became insufficient after some operations", async () => {
+                it("reverts", async () => {
+
+                });
+            });
+
+            describe("when allowance got increased after it became insufficient", async () => {
+                it("succeeds", async () => {
+
+                });
+            });
+
+            describe("when allowance was decreased and became insufficient", async () => {
+                it("reverts", async () => {
+
+                });
+            });
+
+            describe("when allowance was decreased but still remains sufficient", async () => {
+                it("succeeds", async () => {
+
+                });
+            });
+        });
+    });
+
+    describe("allowance", async () => {
+        describe("when spender address is zero", async () => {
+            it("reverts", async () => {
+
+            });
+        });
+
+        describe("when spender address is same as owner address", async () => {
+            it("does not modify allowance", async () => {
+
+            });
+
+            it("emits an event", async () => {
+
+            });
+        });
+
+        describe("when spender address is different from owner address", async () => {
+            it("modifies allowance", async () => {
+
+            });
+
+            it("emits an event", async () => {
+
+            });
+
+            describe("when owner has less funds than spender is allowed to withdraw", async () => {
+                it("still modifies allowance", async () => {
+
+                });
+
+                it("emits an event", async () => {
+
+                });
+            });
+
+            describe("when allowance is set twice", async () => {
+                it("overwrites previous allowance", async () => {
+
+                });
+
+                it("emits an event", async () => {
+
+                });
+            });
+        });
+    });
+
+    describe("transfer", async () => {
+    });
+    describe("transferFrom", async () => {
     });
 });
