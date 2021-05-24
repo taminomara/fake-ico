@@ -24,7 +24,7 @@ contract SCM {
         _totalSupply = totalSupply;
         _balances[msg.sender] = totalSupply;
 
-        emit Transfer(address(0x0), msg.sender, totalSupply);
+        emit Transfer(address(0), msg.sender, totalSupply);
     }
 
     // Get name of this coin, used in UI to improve human readability.
@@ -61,7 +61,7 @@ contract SCM {
     function transferFrom(address from, address to, uint256 value) public returns (bool success) {
         require(from != address(0), "sending from zero address");
         require(to != address(0), "sending to zero address");
-        require(_balances[from] >= value, "not sufficient funds");
+        require(_balances[from] >= value, "insufficient funds");
 
         if (from != msg.sender) {
             require(_allowed[from][msg.sender] >= value, "allowance exhausted");
@@ -78,6 +78,8 @@ contract SCM {
 
     // Give `spender` permission to withdraw up to `value` tokens from the caller's wallet.
     function approve(address spender, uint256 value) public returns (bool success) {
+        require(spender != address(0), "setting allowance for zero address");
+
         if (msg.sender != spender) {
             _allowed[msg.sender][spender] = value;
         }
