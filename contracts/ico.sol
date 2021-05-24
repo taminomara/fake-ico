@@ -47,6 +47,11 @@ contract ICO {
     uint256 private _closeTime = 0;
     mapping (address => uint256) private _contributions;
 
+    constructor(WETH9 _weth) public {
+        scm = new SCM(toScm(target));
+        weth = _weth;
+    }
+
     // Convert ETH to SCM.
     function toScm(uint256 eth) public pure returns (uint256) {
         return eth * rate;
