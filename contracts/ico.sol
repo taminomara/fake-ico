@@ -114,7 +114,7 @@ contract ICO {
 
         require(funds <= _left, "not enough tokens left");
 
-        weth.transferFrom(msg.sender, address(this), funds);
+        require(weth.transferFrom(msg.sender, address(this), funds));
 
         _contributions[msg.sender] += funds;
         _left -= funds;
@@ -147,7 +147,7 @@ contract ICO {
         uint256 balance = toScm(_contributions[msg.sender]);
 
         require(balance > 0, "no SCM tokens to claim");
-        scm.transfer(msg.sender, balance);
+        require(scm.transfer(msg.sender, balance));
 
         _contributions[msg.sender] = 0;
 
