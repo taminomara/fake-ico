@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Unlicense
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.5.0;
 
 // A simple implementation of the ERC20 interface for training purposes.
 // See https://eips.ethereum.org/EIPS/eip-20 for details.
@@ -20,7 +20,7 @@ contract SCM {
     event Approval(address indexed owner, address indexed spender, uint256 value);
 
     // Create the contract and set balance of the creator to `totalSupply`.
-    constructor(uint256 totalSupply) {
+    constructor(uint256 totalSupply) public {
         _totalSupply = totalSupply;
         _balances[msg.sender] = totalSupply;
 
@@ -61,7 +61,7 @@ contract SCM {
     function transferFrom(address from, address to, uint256 value) public returns (bool success) {
         require(from != address(0), "sending from zero address");
         require(to != address(0), "sending to zero address");
-        require(_balances[from] >= value, "insufficient funds");
+        require(_balances[from] >= value, "not enough funds");
 
         if (from != msg.sender) {
             require(_allowed[from][msg.sender] >= value, "allowance exhausted");

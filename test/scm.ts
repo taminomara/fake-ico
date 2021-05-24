@@ -58,7 +58,7 @@ describe("SCM contract", async () => {
 
             it("reverts when balance is insufficient", async () => {
                 await expect(scm.transfer(owner.address, 10000))
-                    .to.be.revertedWith("insufficient funds");
+                    .to.be.revertedWith("not enough funds");
             });
         });
 
@@ -84,7 +84,7 @@ describe("SCM contract", async () => {
 
             it("reverts when balance is insufficient", async () => {
                 await expect(scm.transfer(addr1.address, 10000))
-                    .to.be.revertedWith("insufficient funds");
+                    .to.be.revertedWith("not enough funds");
                 expect(await scm.balanceOf(owner.address))
                     .to.equal(100);
                 expect(await scm.balanceOf(addr1.address))
@@ -95,7 +95,7 @@ describe("SCM contract", async () => {
                 await expect(scm.transfer(addr1.address, 50))
                     .to.not.be.reverted;
                 await expect(scm.transfer(addr1.address, 100))
-                    .to.be.revertedWith("insufficient funds");
+                    .to.be.revertedWith("not enough funds");
                 expect(await scm.balanceOf(owner.address))
                     .to.equal(100 - 50);
                 expect(await scm.balanceOf(addr1.address))
@@ -183,7 +183,7 @@ describe("SCM contract", async () => {
                     expect(await scm.balanceOf(owner.address))
                         .to.equal(25);
                     await expect(scm1.transferFrom(owner.address, addr1.address, 50))
-                        .to.be.revertedWith("insufficient funds");
+                        .to.be.revertedWith("not enough funds");
                 });
             });
 
@@ -238,7 +238,7 @@ describe("SCM contract", async () => {
                     expect(await scm.balanceOf(owner.address))
                         .to.equal(25);
                     await expect(scm1.transferFrom(owner.address, addr2.address, 50))
-                        .to.be.revertedWith("insufficient funds");
+                        .to.be.revertedWith("not enough funds");
                 });
             });
 

@@ -1,8 +1,9 @@
 // SPDX-License-Identifier: Unlicense
 
-pragma solidity ^0.7.0;
+pragma solidity ^0.5.0;
 
 import "./scm.sol";
+import "canonical-weth/contracts/WETH9.sol";
 
 contract ICO {
     // Current state of the ICO.
