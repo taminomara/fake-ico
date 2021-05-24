@@ -1,5 +1,3 @@
-// noinspection TypeScriptUnresolvedFunction,TypeScriptValidateJSTypes,TypeScriptUnresolvedVariable
-
 import {expect} from "chai";
 import {ethers} from "hardhat";
 import {describe} from "mocha";
