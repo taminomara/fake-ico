@@ -33,7 +33,7 @@ contract ICO {
     SCM public scm;
 
     // WETH coin we're collecting.
-    SCM public weth;
+    WETH9 public weth;
 
     // Emitted when the ICO is closed.
     //
