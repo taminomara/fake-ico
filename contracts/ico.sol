@@ -114,9 +114,6 @@ contract ICO {
 
         require(funds <= _left, "not enough tokens left");
 
-        uint256 allowance = weth.allowance(msg.sender, address(this));
-        require(funds <= allowance, "not enough funds available for transfer");
-
         weth.transferFrom(msg.sender, address(this), funds);
 
         _contributions[msg.sender] += funds;
