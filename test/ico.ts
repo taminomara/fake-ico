@@ -23,5 +23,8 @@ describe("ICO contract", async () => {
         scm = ico.scm();
 
         [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
+
+        await eth.connect(addr1).deposit({value: 10});
+        await eth.connect(addr2).deposit({value: 10});
     });
 });
