@@ -39,9 +39,19 @@ contract ICO {
     //
     // Args:
     //
+    // - `closedTime`: timestamp of when this ICO was closed.
     // - `finishedTime`: timestamp of when issued SCM tokens
-    //   will be available for withdrawl.
-    event IcoClosed(uint256 finishedTime);
+    //   will be available for withdrawal.
+    event IcoClosed(uint256 closedTime, uint256 finishedTime);
+
+    // Emitted when someone funds this ICO.
+    //
+    // Args:
+    //
+    // - `buyer`: who bought the tokens.
+    // - `ethersUsed`: number of ETH tokens added to the ICO.
+    // - `scmPurchased`: number of SCM tokens added to the buyer's balance.
+    event Fund(address indexed buyer, uint256 ethUsed, uint256 scmPurchased);
 
     uint256 private _left = target;
     uint256 private _closeTime = 0;
@@ -119,9 +129,11 @@ contract ICO {
         _contributions[msg.sender] += funds;
         _left -= funds;
 
+        emit Fund(msg.sender, funds, toScm(funds));
+
         if (_left == 0) {
             _closeTime = block.timestamp;
-            emit IcoClosed(finishTime());
+            emit IcoClosed(closeTime(), finishTime());
         }
 
         return toScm(funds);
