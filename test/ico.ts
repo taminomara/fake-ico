@@ -3,6 +3,8 @@ import {ethers} from "hardhat";
 import {describe} from "mocha";
 
 describe("ICO contract", async () => {
+    const ether = ethers.utils.parseEther;
+
     let Eth;
     let eth;
     let Ico;
@@ -24,17 +26,19 @@ describe("ICO contract", async () => {
 
         [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
 
-        await eth.connect(owner).deposit({value: ethers.utils.parseEther("100")});
-        await eth.connect(owner).approve(ico.address, ethers.utils.parseEther("100"));
-        await eth.connect(addr1).deposit({value: ethers.utils.parseEther("100")});
-        await eth.connect(addr1).approve(ico.address, ethers.utils.parseEther("100"));
-        await eth.connect(addr2).deposit({value: ethers.utils.parseEther("100")});
-        await eth.connect(addr2).approve(ico.address, ethers.utils.parseEther("100"));
+        await eth.connect(owner).deposit({value: ether("100")});
+        await eth.connect(owner).approve(ico.address, ether("100"));
+        await eth.connect(addr1).deposit({value: ether("100")});
+        await eth.connect(addr1).approve(ico.address, ether("100"));
+        await eth.connect(addr2).deposit({value: ether("100")});
+        await eth.connect(addr2).approve(ico.address, ether("100"));
     });
 
     it("provides basic information", async () => {
-        expect(await ico.target()).to.equal(ethers.utils.parseEther("10"));
+        expect(await ico.target()).to.equal(ether("10"));
         expect(await ico.rate()).to.equal(10);
+        expect(await ico.leftEth()).to.equal(ether("10"));
+        expect(await ico.leftScm()).to.equal(ether("10").mul(10));
         expect(await ico.holdDuration()).to.equal(2 * 60);
     });
 
@@ -45,7 +49,7 @@ describe("ICO contract", async () => {
         });
 
         it("says state is closed when we have enough funds", async () => {
-            await expect(ico.fund(ethers.utils.parseEther("10")))
+            await expect(ico.fund(ether("10")))
                 .to.not.be.reverted;
 
             expect(await ico.state())
@@ -53,7 +57,7 @@ describe("ICO contract", async () => {
         });
 
         it("says state is finished when we have enough funds and enough time has passed", async () => {
-            await expect(ico.fund(ethers.utils.parseEther("10")))
+            await expect(ico.fund(ether("10")))
                 .to.not.be.reverted;
 
             await ethers.provider.send("evm_increaseTime", [2 * 60]);
@@ -66,35 +70,75 @@ describe("ICO contract", async () => {
 
     describe("fund method", async () => {
         it("updates user balance", async () => {
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.not.be.reverted;
 
+            expect(await ico.balanceEth(addr1.address))
+                .to.equal(ether("5"));
+            expect(await ico.balanceScm(addr1.address))
+                .to.equal(ether("5").mul(10));
         });
 
         it("sends WETH to contract's account", async () => {
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.not.be.reverted;
 
+            expect(await eth.balanceOf(ico.address))
+                .to.equal(ether("5"));
+            expect(await eth.balanceOf(addr1.address))
+                .to.equal(ether("95"));
         });
 
         it("updates number of SCM tokens left", async () => {
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.not.be.reverted;
 
+            expect(await ico.leftEth())
+                .to.equal(ether("5"));
+            expect(await ico.leftScm())
+                .to.equal(ether("5").mul(10));
         });
 
         it("updates user balance when called multiple times", async () => {
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.not.be.reverted;
+            await expect(ico.connect(addr1).fund(ether("3")))
+                .to.not.be.reverted;
 
+            expect(await ico.balanceEth(addr1.address))
+                .to.equal(ether("8"));
+            expect(await ico.balanceScm(addr1.address))
+                .to.equal(ether("8").mul(10));
         });
 
         it("sends WETH to contract's account when called multiple times", async () => {
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.not.be.reverted;
+            await expect(ico.connect(addr1).fund(ether("3")))
+                .to.not.be.reverted;
 
-        });
-
-        it("updates user balance when called multiple times", async () => {
-
+            expect(await eth.balanceOf(ico.address))
+                .to.equal(ether("8"));
+            expect(await eth.balanceOf(addr1.address))
+                .to.equal(ether("92"));
         });
 
         it("updates number of SCM tokens left when called multiple times", async () => {
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.not.be.reverted;
+            await expect(ico.connect(addr1).fund(ether("3")))
+                .to.not.be.reverted;
 
+            expect(await ico.leftEth())
+                .to.equal(ether("2"));
+            expect(await ico.leftScm())
+                .to.equal(ether("2").mul(10));
         });
 
         it("emits an event", async () => {
-
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.emit(ico, "Fund")
+                .withArgs(addr1.address, ether("5"), ether("5").mul(10));
         });
 
         it("closes ICO when no tokens left to purchase", async () => {
