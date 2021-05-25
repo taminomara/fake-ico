@@ -71,7 +71,7 @@ contract ICO {
     function state() public view returns (State) {
         if (_left > 0) {
             return State.Ongoing;
-        } else if (block.timestamp < finishTime()) {
+        } else if (block.timestamp < _closeTime + holdDuration) {
             return State.Closed;
         } else {
             return State.Finished;
