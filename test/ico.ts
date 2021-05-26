@@ -179,23 +179,45 @@ describe("ICO contract", async () => {
         });
 
         it("reverts when buyer doesn't have enough WETH", async () => {
+            let addr = addrs[0];
 
+            await eth.connect(addr).deposit({value: ether("5")});
+            await eth.connect(addr).approve(ico.address, ether("5"));
+
+            await expect(ico.connect(addr).fund(ether("10")))
+                .to.be.revertedWith("not enough WETH");
         });
 
         it("reverts when this contract is not allowed to spend buyer's' WETH", async () => {
+            let addr = addrs[0];
 
+            await eth.connect(addr).deposit({value: ether("10")});
+            await eth.connect(addr).approve(ico.address, ether("5"));
+
+            await expect(ico.connect(addr).fund(ether("10")))
+                .to.be.revertedWith("not allowed to spend WETH");
         });
 
         it("reverts when purchasing more tokens than available", async () => {
-
+            await expect(ico.connect(addr1).fund(ether("100")))
+                .to.be.revertedWith("not enough tokens left");
         });
 
         it("reverts when ICO is closed", async () => {
+            await ico.fund(ether("10"));
 
+            await expect(ico.connect(addr1).fund(ether("10")))
+                .to.be.revertedWith("ICO is closed");
         });
 
         it("reverts when ICO is finished", async () => {
+            await ico.fund(ether("10"));
 
+            await ethers.provider.send("evm_increaseTime", [5 * 60]);
+            await ethers.provider.send("evm_mine", []);
+
+            await expect(ico.connect(addr1).fund(ether("10")))
+                .to.be.revertedWith("ICO is closed");
         });
     });
 
