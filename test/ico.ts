@@ -223,27 +223,72 @@ describe("ICO contract", async () => {
 
     describe("fundAny method", async () => {
         it("spends all user's ether if possible", async () => {
+            await expect(ico.connect(addr1).fundAny(ether("5")))
+                .to.not.be.reverted;
 
+            expect(await eth.balanceOf(ico.address))
+                .to.equal(ether("5"));
+            expect(await eth.balanceOf(addr1.address))
+                .to.equal(ether("95"));
+            expect(await ico.balanceEth(addr1.address))
+                .to.equal(ether("5"));
         });
 
         it("gives user all available SCM tokens if they have enough ETH", async () => {
+            await expect(ico.connect(addr1).fundAny(ether("50")))
+                .to.not.be.reverted;
 
+            expect(await eth.balanceOf(ico.address))
+                .to.equal(ether("10"));
+            expect(await eth.balanceOf(addr1.address))
+                .to.equal(ether("90"));
+            expect(await ico.balanceEth(addr1.address))
+                .to.equal(ether("10"));
+        });
+
+        it("gives user all available SCM tokens if they have enough ETH if ICO is partially funded", async () => {
+            await expect(ico.connect(addr2).fund(ether("3")))
+                .to.not.be.reverted;
+            await expect(ico.connect(addr1).fundAny(ether("50")))
+                .to.not.be.reverted;
+
+            expect(await eth.balanceOf(ico.address))
+                .to.equal(ether("10"));
+            expect(await eth.balanceOf(addr1.address))
+                .to.equal(ether("93"));
+            expect(await ico.balanceEth(addr1.address))
+                .to.equal(ether("7"));
         });
 
         it("emits an appropriate event when all user's ether is used", async () => {
-
+            await expect(ico.connect(addr1).fundAny(ether("5")))
+                .to.emit(ico, "Fund")
+                .withArgs(addr1.address, ether("5"), ether("5").mul(10));
         });
 
         it("emits an appropriate event when only part of user's ether is used", async () => {
-
+            await expect(ico.connect(addr1).fundAny(ether("50")))
+                .to.emit(ico, "Fund")
+                .withArgs(addr1.address, ether("10"), ether("10").mul(10));
         });
 
         it("reverts when ICO is closed", async () => {
+            await expect(ico.connect(addr2).fund(ether("10")))
+                .to.not.be.reverted;
 
+            await expect(ico.connect(addr1).fundAny(ether("50")))
+                .to.be.revertedWith("ICO is closed");
         });
 
         it("reverts when ICO is finished", async () => {
+            await expect(ico.connect(addr2).fund(ether("10")))
+                .to.not.be.reverted;
 
+            await ethers.provider.send("evm_increaseTime", [5 * 60]);
+            await ethers.provider.send("evm_mine", []);
+
+            await expect(ico.connect(addr1).fundAny(ether("50")))
+                .to.be.revertedWith("ICO is closed");
         });
     });
 
