@@ -142,15 +142,40 @@ describe("ICO contract", async () => {
         });
 
         it("closes ICO when no tokens left to purchase", async () => {
+            expect(await ico.state())
+                .to.equal(0);
 
+            await expect(ico.connect(addr1).fund(ether("5")))
+                .to.not.be.reverted;
+            await expect(ico.connect(addr2).fund(ether("5")))
+                .to.not.be.reverted;
+
+            expect(await ico.state())
+                .to.equal(1);
         });
 
         it("sets proper closing time", async () => {
+            const time = new Date().getTime() + 5 * 60;
 
+            await ethers.provider.send("evm_setNextBlockTimestamp", [time]);
+
+            await expect(ico.connect(addr1).fund(ether("10")))
+                .to.not.be.reverted;
+
+            expect(await ico.closeTime())
+                .to.be.equal(time);
+            expect(await ico.finishTime())
+                .to.be.equal(time + 2 * 60);
         });
 
         it("emits closing event", async () => {
+            const time = new Date().getTime() + 5 * 60;
 
+            await ethers.provider.send("evm_setNextBlockTimestamp", [time]);
+
+            await expect(ico.connect(addr1).fund(ether("10")))
+                .to.emit(ico, "IcoClosed")
+                .withArgs(time, time + 2 * 60);
         });
 
         it("reverts when buyer doesn't have enough WETH", async () => {
