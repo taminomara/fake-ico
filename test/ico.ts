@@ -9,6 +9,7 @@ describe("ICO contract", async () => {
     let eth;
     let Ico;
     let ico;
+    let Scm;
     let scm;
     let owner;
     let ethReceiver;
@@ -25,7 +26,8 @@ describe("ICO contract", async () => {
         Ico = await ethers.getContractFactory("ICO");
         ico = await Ico.deploy(eth.address, ethReceiver.address);
 
-        scm = ico.scm();
+        Scm = await ethers.getContractFactory("SCM");
+        scm = Scm.attach(await ico.scm());
 
         await eth.connect(owner).deposit({value: ether("100")});
         await eth.connect(owner).approve(ico.address, ether("100"));
@@ -156,7 +158,7 @@ describe("ICO contract", async () => {
         });
 
         it("sets proper closing time", async () => {
-            const time = new Date().getTime() + 5 * 60;
+            const time = new Date().getTime() + 2 * 60;
 
             await ethers.provider.send("evm_setNextBlockTimestamp", [time]);
 
@@ -170,7 +172,7 @@ describe("ICO contract", async () => {
         });
 
         it("emits closing event", async () => {
-            const time = new Date().getTime() + 5 * 60;
+            const time = new Date().getTime() + 2 * 60;
 
             await ethers.provider.send("evm_setNextBlockTimestamp", [time]);
 
@@ -214,7 +216,7 @@ describe("ICO contract", async () => {
         it("reverts when ICO is finished", async () => {
             await ico.fund(ether("10"));
 
-            await ethers.provider.send("evm_increaseTime", [5 * 60]);
+            await ethers.provider.send("evm_increaseTime", [2 * 60]);
             await ethers.provider.send("evm_mine", []);
 
             await expect(ico.connect(addr1).fund(ether("10")))
@@ -285,7 +287,7 @@ describe("ICO contract", async () => {
             await expect(ico.connect(addr2).fund(ether("10")))
                 .to.not.be.reverted;
 
-            await ethers.provider.send("evm_increaseTime", [5 * 60]);
+            await ethers.provider.send("evm_increaseTime", [2 * 60]);
             await ethers.provider.send("evm_mine", []);
 
             await expect(ico.connect(addr1).fundAny(ether("50")))
@@ -294,32 +296,92 @@ describe("ICO contract", async () => {
     });
 
     describe("claim", async () => {
-        it("transfers user's SCM to their account", async () => {
+        describe("when ico is finished", async () => {
+            beforeEach(async () => {
+                await ico.connect(addr1).fund(ether("7"));
+                await ico.connect(addr2).fund(ether("3"));
 
+                await ethers.provider.send("evm_increaseTime", [2 * 60]);
+                await ethers.provider.send("evm_mine", []);
+            });
+
+            it("transfers user's SCM to their account", async () => {
+                expect(await scm.balanceOf(ico.address))
+                    .to.be.equal(ether("10").mul(10));
+                expect(await scm.balanceOf(addr1.address))
+                    .to.be.equal(0);
+
+                await expect(ico.connect(addr1).claim())
+                    .to.not.be.reverted;
+
+                expect(await scm.balanceOf(ico.address))
+                    .to.be.equal(ether("3").mul(10));
+                expect(await scm.balanceOf(addr1.address))
+                    .to.be.equal(ether("7").mul(10));
+            });
+
+            it("resets user balance", async () => {
+                expect(await ico.balanceEth(addr1.address))
+                    .to.be.equal(ether("7"));
+                expect(await ico.balanceEth(addr2.address))
+                    .to.be.equal(ether("3"));
+
+                await expect(ico.connect(addr1).claim())
+                    .to.not.be.reverted;
+
+                expect(await ico.balanceEth(addr1.address))
+                    .to.be.equal(ether("0"));
+                expect(await ico.balanceEth(addr2.address))
+                    .to.be.equal(ether("3"));
+
+                await expect(ico.connect(addr2).claim())
+                    .to.not.be.reverted;
+
+                expect(await ico.balanceEth(addr1.address))
+                    .to.be.equal(ether("0"));
+                expect(await ico.balanceEth(addr2.address))
+                    .to.be.equal(ether("0"));
+            });
+
+            it("reverts when user balance is zero", async () => {
+                await expect(ico.connect(owner).claim())
+                    .to.be.revertedWith("no SCM tokens to claim");
+            });
+
+            it("reverts if trying to claim tokens twice", async () => {
+                await expect(ico.connect(addr1).claim())
+                    .to.not.be.reverted;
+                await expect(ico.connect(addr1).claim())
+                    .to.be.revertedWith("no SCM tokens to claim");
+
+                await expect(ico.connect(addr2).claim())
+                    .to.not.be.reverted;
+                await expect(ico.connect(addr2).claim())
+                    .to.be.revertedWith("no SCM tokens to claim");
+            });
         });
 
-        it("resets user balance", async () => {
+        it("reverts if ICO is ongoing", async () => {
+            await expect(ico.connect(addr1).claim())
+                .to.be.revertedWith("ICO is not finished yet");
 
-        });
+            await ico.connect(addr1).fund(ether("7"));
 
-        it("emits an event", async () => {
-
-        });
-
-        it("reverts when user balance is zero", async () => {
-
-        });
-
-        it("reverts if trying to claim tokens twice", async () => {
-
-        });
-
-        it("reverts if ICO is not ongoing", async () => {
-
+            await expect(ico.connect(addr1).claim())
+                .to.be.revertedWith("ICO is not finished yet");
         });
 
         it("reverts if ICO is closed but not finished", async () => {
+            await ico.connect(addr1).fund(ether("10"));
 
+            await expect(ico.connect(addr1).claim())
+                .to.be.revertedWith("ICO is not finished yet");
+
+            await ethers.provider.send("evm_increaseTime", [2 * 60]);
+            await ethers.provider.send("evm_mine", []);
+
+            await expect(ico.connect(addr1).claim())
+                .to.not.be.reverted;
         });
     });
 });
