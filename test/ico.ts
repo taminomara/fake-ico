@@ -11,20 +11,21 @@ describe("ICO contract", async () => {
     let ico;
     let scm;
     let owner;
+    let ethReceiver;
     let addr1;
     let addr2;
     let addrs;
 
     beforeEach(async () => {
+        [owner, ethReceiver, addr1, addr2, ...addrs] = await ethers.getSigners();
+
         Eth = await ethers.getContractFactory("WETH9");
         eth = await Eth.deploy();
 
         Ico = await ethers.getContractFactory("ICO");
-        ico = await Ico.deploy(eth.address);
+        ico = await Ico.deploy(eth.address, ethReceiver.address);
 
         scm = ico.scm();
-
-        [owner, addr1, addr2, ...addrs] = await ethers.getSigners();
 
         await eth.connect(owner).deposit({value: ether("100")});
         await eth.connect(owner).approve(ico.address, ether("100"));
@@ -83,7 +84,7 @@ describe("ICO contract", async () => {
             await expect(ico.connect(addr1).fund(ether("5")))
                 .to.not.be.reverted;
 
-            expect(await eth.balanceOf(ico.address))
+            expect(await eth.balanceOf(ethReceiver.address))
                 .to.equal(ether("5"));
             expect(await eth.balanceOf(addr1.address))
                 .to.equal(ether("95"));
@@ -117,7 +118,7 @@ describe("ICO contract", async () => {
             await expect(ico.connect(addr1).fund(ether("3")))
                 .to.not.be.reverted;
 
-            expect(await eth.balanceOf(ico.address))
+            expect(await eth.balanceOf(ethReceiver.address))
                 .to.equal(ether("8"));
             expect(await eth.balanceOf(addr1.address))
                 .to.equal(ether("92"));
@@ -226,7 +227,7 @@ describe("ICO contract", async () => {
             await expect(ico.connect(addr1).fundAny(ether("5")))
                 .to.not.be.reverted;
 
-            expect(await eth.balanceOf(ico.address))
+            expect(await eth.balanceOf(ethReceiver.address))
                 .to.equal(ether("5"));
             expect(await eth.balanceOf(addr1.address))
                 .to.equal(ether("95"));
@@ -238,7 +239,7 @@ describe("ICO contract", async () => {
             await expect(ico.connect(addr1).fundAny(ether("50")))
                 .to.not.be.reverted;
 
-            expect(await eth.balanceOf(ico.address))
+            expect(await eth.balanceOf(ethReceiver.address))
                 .to.equal(ether("10"));
             expect(await eth.balanceOf(addr1.address))
                 .to.equal(ether("90"));
@@ -252,7 +253,7 @@ describe("ICO contract", async () => {
             await expect(ico.connect(addr1).fundAny(ether("50")))
                 .to.not.be.reverted;
 
-            expect(await eth.balanceOf(ico.address))
+            expect(await eth.balanceOf(ethReceiver.address))
                 .to.equal(ether("10"));
             expect(await eth.balanceOf(addr1.address))
                 .to.equal(ether("93"));

@@ -57,9 +57,19 @@ contract ICO {
     uint256 private _closeTime = 0;
     mapping (address => uint256) private _contributions;
 
-    constructor(WETH9 _weth) public {
+    // XXX: ideally we'd like some logic to cancel the ICO. Initially,
+    //      all collected ether is stored at the ICO's address. If within
+    //      certain time we don't collect enough funds, ICO is cancelled
+    //      and users can get their money back. Otherwise, ICO succeeds
+    //      and `ethReceiver` can claim their ethers, while contributors
+    //      can claim their SCMs. I'm not going to implement this because
+    //      I've already spent enough time on this task =)
+    address _ethReceiver;
+
+    constructor(WETH9 _weth, address ethReceiver) public {
         scm = new SCM(toScm(target));
         weth = _weth;
+        _ethReceiver = ethReceiver;
     }
 
     // Convert ETH to SCM.
@@ -127,7 +137,7 @@ contract ICO {
         require(weth.balanceOf(msg.sender) >= funds, "not enough WETH");
         require(weth.allowance(msg.sender, address(this)) >= funds, "not allowed to spend WETH");
 
-        require(weth.transferFrom(msg.sender, address(this), funds));
+        require(weth.transferFrom(msg.sender, address(_ethReceiver), funds));
 
         _contributions[msg.sender] += funds;
         _left -= funds;
