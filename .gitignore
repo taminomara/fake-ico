@@ -128,3 +128,6 @@ dist
 
 # Hardhat artefacts
 cache/
+
+# Added by cargo
+/target
