@@ -2,9 +2,11 @@
 
 pragma solidity ^0.5.0;
 
+import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
+
 // A simple implementation of the ERC20 interface for training purposes.
 // See https://eips.ethereum.org/EIPS/eip-20 for details.
-contract SCM {
+contract SCM is IERC20 {
     string private constant _name = "Scam";
     string private constant _symbol = "SCM";
     uint8 private constant _decimals = 18;
