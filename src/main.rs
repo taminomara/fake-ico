@@ -60,7 +60,7 @@ async fn main() -> Result<(), ethcontract::errors::DeployError> {
 async fn deploy(
     web3: &Web3<Http>,
     args: &clap::ArgMatches<'static>,
-    address: Address
+    address: Address,
 ) -> Result<(), ethcontract::errors::DeployError> {
     let weth = {
         if args.is_present("deploy-weth") {
@@ -105,7 +105,9 @@ async fn deploy(
     println!("ICO will send ether to {:?}", address);
     println!("Deploying ICO...");
 
-    let ico = contracts::ICO::builder(&web3, weth, address).deploy().await?;
+    let ico = contracts::ICO::builder(&web3, weth, address)
+        .deploy()
+        .await?;
 
     println!("ICO deployed at {:?}", ico.address());
 
