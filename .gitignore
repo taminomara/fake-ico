@@ -128,7 +128,7 @@ dist
 
 # Hardhat artefacts
 cache/
-artefacts/
+artifacts/
 deployments/localhost/
 
 # Added by cargo
