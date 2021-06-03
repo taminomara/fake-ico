@@ -15,12 +15,6 @@ contract SCM is IERC20 {
     mapping (address => uint256) private _balances;
     mapping (address => mapping (address => uint256)) private _allowed;
 
-    // Emitted whenever tokens are transferred between wallets.
-    event Transfer(address indexed from, address indexed to, uint256 value);
-
-    // Emitted whenever a user gets an approval to withdraw tokens from some account.
-    event Approval(address indexed owner, address indexed spender, uint256 value);
-
     // Create the contract and set balance of the creator to `totalSupply`.
     constructor(uint256 totalSupply) public {
         _totalSupply = totalSupply;
