@@ -1,5 +1,6 @@
 use ethcontract::prelude::*;
 
+mod cli;
 mod contracts;
 
 #[tokio::main]
