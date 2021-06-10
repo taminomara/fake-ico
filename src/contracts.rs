@@ -1,3 +1,3 @@
-ethcontract::contract!(pub "artifacts/contracts/ico.sol/ICO.json");
-ethcontract::contract!(pub "artifacts/contracts/scm.sol/SCM.json");
-ethcontract::contract!(pub "artifacts/canonical-weth/contracts/WETH9.sol/WETH9.json");
+ethcontract::contract!(pub "deployments/ICO.json");
+ethcontract::contract!(pub "deployments/SCM.json");
+ethcontract::contract!(pub "deployments/WETH9.json");
