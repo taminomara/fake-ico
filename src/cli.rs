@@ -1,211 +1,75 @@
-use std::collections::HashMap;
+use ethcontract::prelude::*;
+use std::str::FromStr;
 
-pub enum Cli<'s> {
-    Router(Router<'s>),
-    Command(Command<'s>),
-}
+/// For CLI arguments that take amount of ether.
+///
+/// Supports parsing ether values in human-readable form,
+/// i.e. `1eth` or `100gwei` or others.
+#[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
+pub struct Eth(U256);
 
-impl Cli<'_> {
-    /// Get name of this command.
-    pub fn get_name(&self) -> &str {
-        match self {
-            Cli::Router(r) => r.get_name(),
-            Cli::Command(c) => c.get_name(),
-        }
-    }
-
-    /// Parse program arguments and invoke an appropriate subcommand.
-    pub fn run(&self) -> clap::Result<()> {
-        self.call(&self.build_clap_app().get_matches())
-    }
-
-    /// Invoke an appropriate subcommand based on the given parsed arguments.
-    pub fn call(&self, matches: &clap::ArgMatches) -> clap::Result<()> {
-        match self {
-            Cli::Router(r) => r.call(matches),
-            Cli::Command(c) => c.call(matches),
-        }
-    }
-
-    /// Build [`clap::App`] based on this command.
-    pub fn build_clap_app(&self) -> clap::App {
-        match self {
-            Cli::Router(r) => r.build_clap_app(),
-            Cli::Command(c) => c.build_clap_app(),
-        }
+impl Eth {
+    /// Get the underlying int type.
+    pub fn as_inner(self) -> U256 {
+        self.0
     }
 }
 
-pub struct Command<'s> {
-    name: String,
-    about: Option<String>,
-    long_about: Option<String>,
-    args: Vec<clap::Arg<'s, 's>>,
-    func: Option<Box<dyn Fn(&clap::ArgMatches) -> clap::Result<()> + 's>>,
-}
+impl FromStr for Eth {
+    type Err = uint::FromStrRadixErr;
 
-impl<'s> Command<'s> {
-    /// Create a new command or subcommand using the given name to identify it.
-    pub fn with_name<S: Into<String>>(name: S) -> Self {
-        Command {
-            name: name.into(),
-            about: None,
-            long_about: None,
-            args: Vec::new(),
-            func: None,
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
+        let s = s.to_ascii_lowercase();
+
+        let (s, modifier) = if let Some(s) = s.strip_suffix("ether") {
+            (s, U256::exp10(18))
+        } else if let Some(s) = s.strip_suffix("eth") {
+            (s, U256::exp10(18))
+        } else if let Some(s) = s.strip_suffix("pwei") {
+            (s, U256::exp10(15))
+        } else if let Some(s) = s.strip_suffix("twei") {
+            (s, U256::exp10(12))
+        } else if let Some(s) = s.strip_suffix("gwei") {
+            (s, U256::exp10(9))
+        } else if let Some(s) = s.strip_suffix("mwei") {
+            (s, U256::exp10(6))
+        } else if let Some(s) = s.strip_suffix("kwei") {
+            (s, U256::exp10(3))
+        } else if let Some(s) = s.strip_suffix("wei") {
+            (s, U256::exp10(0))
+        } else {
+            (s.as_str(), U256::exp10(18))
+        };
+
+        if s.starts_with("0x") {
+            Ok(Eth(U256::from_str_radix(s, 16)? * modifier))
+        } else {
+            Ok(Eth(U256::from_str_radix(s, 10)? * modifier))
         }
-    }
-
-    /// Get name of this command.
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
-
-    /// Add or overwrite a short command's description. See [`clap::App::about`].
-    pub fn about<S: Into<String>>(mut self, about: S) -> Self {
-        self.about = Some(about.into());
-        self
-    }
-
-    /// Add or overwrite a full command's description. See [`clap::App::long_about`].
-    pub fn long_about<S: Into<String>>(mut self, long_about: S) -> Self {
-        self.long_about = Some(long_about.into());
-        self
-    }
-
-    /// Add an argument for this subcommand.
-    pub fn arg(mut self, arg: clap::Arg<'s, 's>) -> Self {
-        self.args.push(arg);
-        self
-    }
-
-    /// Add a callback function that gets invoked when this command is called.
-    pub fn func(mut self, func: impl Fn(&clap::ArgMatches) -> clap::Result<()> + 's) -> Self {
-        self.func = Some(Box::new(func));
-        self
-    }
-
-    /// Finish construction of this command and wrap it into [`Cli`].
-    pub fn done(self) -> Cli<'s> {
-        Cli::Command(self)
-    }
-
-    fn call(&self, matches: &clap::ArgMatches) -> clap::Result<()> {
-        match &self.func {
-            Some(func) => func(matches),
-            _ => Ok(()),
-        }
-    }
-
-    fn build_clap_app(&self) -> clap::App {
-        let mut app = clap::App::new(&self.name);
-
-        if let Some(about) = &self.about {
-            app = app.about(about.as_str());
-        }
-
-        if let Some(long_about) = &self.long_about {
-            app = app.long_about(long_about.as_str());
-        }
-
-        app = app.args(&self.args);
-
-        app
     }
 }
 
-pub struct Router<'s> {
-    name: String,
-    about: Option<String>,
-    long_about: Option<String>,
-    args: Vec<clap::Arg<'s, 's>>,
-    subcommands: HashMap<String, Cli<'s>>,
-}
+#[cfg(test)]
+mod test {
+    use super::*;
 
-impl<'s> Router<'s> {
-    /// Create a new command or subcommand using the given name to identify it.
-    pub fn with_name<S: Into<String>>(name: S) -> Self {
-        Router {
-            name: name.into(),
-            about: None,
-            long_about: None,
-            args: Vec::new(),
-            subcommands: HashMap::new(),
-        }
-    }
+    #[test]
+    fn eth_from_str() -> Result<(), Box<dyn std::error::Error>> {
+        assert_eq!(Eth::from_str("0")?.0, U256::from(0));
+        assert_eq!(Eth::from_str("1")?.0, U256::from_dec_str("1000000000000000000")?);
+        assert_eq!(Eth::from_str("15")?.0, U256::from_dec_str("15000000000000000000")?);
+        assert_eq!(Eth::from_str("0x1")?.0, U256::from_dec_str("1000000000000000000")?);
+        assert_eq!(Eth::from_str("0x15")?.0, U256::from_dec_str("21000000000000000000")?);
 
-    /// Get name of this command.
-    pub fn get_name(&self) -> &str {
-        &self.name
-    }
+        assert_eq!(Eth::from_str("5wei")?.0, U256::from_dec_str("5")?);
+        assert_eq!(Eth::from_str("5kwei")?.0, U256::from_dec_str("5000")?);
+        assert_eq!(Eth::from_str("5mwei")?.0, U256::from_dec_str("5000000")?);
+        assert_eq!(Eth::from_str("5gwei")?.0, U256::from_dec_str("5000000000")?);
+        assert_eq!(Eth::from_str("5twei")?.0, U256::from_dec_str("5000000000000")?);
+        assert_eq!(Eth::from_str("5pwei")?.0, U256::from_dec_str("5000000000000000")?);
+        assert_eq!(Eth::from_str("5eth")?.0, U256::from_dec_str("5000000000000000000")?);
+        assert_eq!(Eth::from_str("5ether")?.0, U256::from_dec_str("5000000000000000000")?);
 
-    /// Add or overwrite a short command's description. See [`clap::App::about`].
-    pub fn about<S: Into<String>>(mut self, about: S) -> Self {
-        self.about = Some(about.into());
-        self
-    }
-
-    /// Add or overwrite a full command's description. See [`clap::App::long_about`].
-    pub fn long_about<S: Into<String>>(mut self, long_about: S) -> Self {
-        self.long_about = Some(long_about.into());
-        self
-    }
-
-    /// Add an argument for this subcommand.
-    pub fn arg(mut self, arg: clap::Arg<'s, 's>) -> Self {
-        self.args.push(arg);
-        self
-    }
-
-    /// Add a subcommand for this command.
-    pub fn subcommand(mut self, command: Cli<'s>) -> Self {
-        self.subcommands.insert(command.get_name().to_string(), command);
-        self
-    }
-
-    /// Finish construction of this router and wrap it into [`Cli`].
-    pub fn done(self) -> Cli<'s> {
-        Cli::Router(self)
-    }
-
-    fn call(&self, matches: &clap::ArgMatches) -> clap::Result<()> {
-        match matches.subcommand() {
-            (name, Some(matches)) => {
-                if let Some(subcommand) = self.subcommands.get(name) {
-                    subcommand.call(matches)
-                } else {
-                    Err(clap::Error::with_description(
-                        &format!("unknown subcommand {:?}", name),
-                        clap::ErrorKind::InvalidSubcommand
-                    ))
-                }
-            },
-            (_, None) => {
-                Err(clap::Error::with_description(
-                    "subcommand is required",
-                    clap::ErrorKind::InvalidSubcommand
-                ))
-            }
-        }
-    }
-
-    fn build_clap_app(&self) -> clap::App {
-        let mut app = clap::App::new(&self.name);
-
-        if let Some(about) = &self.about {
-            app = app.about(about.as_str());
-        }
-
-        if let Some(long_about) = &self.long_about {
-            app = app.long_about(long_about.as_str());
-        }
-
-        app = app.args(&self.args);
-
-        for (_, subcommand) in &self.subcommands {
-            app = app.subcommand(subcommand.build_clap_app());
-        }
-
-        app
+        Ok(())
     }
 }

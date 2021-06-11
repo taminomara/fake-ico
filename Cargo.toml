@@ -9,5 +9,6 @@ edition = "2018"
 [dependencies]
 tokio = { version = "0.2.25", features = ["full"] }
 web3 = "0.15.0"
-clap = "2.33.3"
+structopt = "0.3.21"
 ethcontract = "0.11.3"
+uint = "0.9.0"
