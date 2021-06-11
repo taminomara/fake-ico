@@ -64,7 +64,7 @@ impl ScmCommand {
                 contract
                     .transfer_from(owner.unwrap_or(account.address()), *recipient, funds.as_inner())
                     .from(account)
-                    .call()
+                    .send()
                     .await
                     .expect("transfer failed");
             }
@@ -84,7 +84,7 @@ impl ScmCommand {
                 contract
                     .approve(*spender, value.as_inner())
                     .from(account)
-                    .call()
+                    .send()
                     .await
                     .expect("approve failed");
             }
@@ -94,7 +94,7 @@ impl ScmCommand {
 
 #[derive(structopt::StructOpt)]
 #[structopt(about = "Manage wrapped ethereum tokens")]
-pub enum EthCommand {
+pub enum WethCommand {
     #[structopt(about = "Get balance of the given wallet")]
     Balance {
         #[structopt(help = "Account we're fetching balance for (uses your account by default)")]
@@ -145,9 +145,9 @@ pub enum EthCommand {
     },
 }
 
-impl EthCommand {
+impl WethCommand {
     pub async fn invoke(&self, account: Account, web3: &Web3<Http>) {
-        let contract_address = crate::contracts::get_scm_address(web3).await;
+        let contract_address = crate::contracts::get_weth_address(web3).await;
         let contract = crate::contracts::WETH9::at(web3, contract_address);
 
         match self {
@@ -166,7 +166,7 @@ impl EthCommand {
                 contract
                     .transfer_from(owner.unwrap_or(account.address()), *recipient, funds.as_inner())
                     .from(account)
-                    .call()
+                    .send()
                     .await
                     .expect("transfer failed");
             }
@@ -186,7 +186,7 @@ impl EthCommand {
                 contract
                     .approve(*spender, value.as_inner())
                     .from(account)
-                    .call()
+                    .send()
                     .await
                     .expect("approve failed");
             }
@@ -196,7 +196,7 @@ impl EthCommand {
                     .deposit()
                     .from(account)
                     .value(amount.as_inner())
-                    .call()
+                    .send()
                     .await
                     .expect("deposit failed");
             }
@@ -205,7 +205,7 @@ impl EthCommand {
                 contract
                     .withdraw(amount.as_inner())
                     .from(account)
-                    .call()
+                    .send()
                     .await
                     .expect("withdraw failed");
             }
