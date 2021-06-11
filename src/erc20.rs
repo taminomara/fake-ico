@@ -60,9 +60,17 @@ impl ScmCommand {
                 println!("{}asc", balance);
             }
 
-            Self::Transfer { recipient, funds, owner } => {
+            Self::Transfer {
+                recipient,
+                funds,
+                owner,
+            } => {
                 contract
-                    .transfer_from(owner.unwrap_or(account.address()), *recipient, funds.as_inner())
+                    .transfer_from(
+                        owner.unwrap_or(account.address()),
+                        *recipient,
+                        funds.as_inner(),
+                    )
                     .from(account)
                     .send()
                     .await
@@ -162,9 +170,17 @@ impl WethCommand {
                 println!("{}wei", balance);
             }
 
-            Self::Transfer { recipient, funds, owner } => {
+            Self::Transfer {
+                recipient,
+                funds,
+                owner,
+            } => {
                 contract
-                    .transfer_from(owner.unwrap_or(account.address()), *recipient, funds.as_inner())
+                    .transfer_from(
+                        owner.unwrap_or(account.address()),
+                        *recipient,
+                        funds.as_inner(),
+                    )
                     .from(account)
                     .send()
                     .await

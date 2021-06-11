@@ -20,8 +20,8 @@ pub async fn get_weth_address(web3: &Web3<Http>) -> Address {
         .networks
         .get(&net_id)
         .expect(concat!(
-        "there is no known instance of WETH on this network; ",
-        "you should specify WETH address manually with WETH_ADDRESS environment variable"
+            "there is no known instance of WETH on this network; ",
+            "you should specify WETH address manually with WETH_ADDRESS environment variable"
         ))
         .address
 }
@@ -41,8 +41,8 @@ pub async fn get_scm_address(web3: &Web3<Http>) -> Address {
         .networks
         .get(&net_id)
         .expect(concat!(
-        "there is no known instance of SCM on this network; ",
-        "you should specify SCM address manually with SCM_ADDRESS environment variable"
+            "there is no known instance of SCM on this network; ",
+            "you should specify SCM address manually with SCM_ADDRESS environment variable"
         ))
         .address
 }
