@@ -1,5 +1,6 @@
 use ethcontract::prelude::*;
 use std::str::FromStr;
+use std::fmt::{Display, Formatter};
 
 /// Trait for CLI arguments that represent an amount of some currency.
 pub trait Currency: FromStr {
@@ -13,6 +14,12 @@ pub trait Currency: FromStr {
 /// i.e. `1eth` or `100gwei` or others.
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Eth(U256);
+
+impl Eth {
+    pub fn new(inner: U256) -> Self {
+        Self(inner)
+    }
+}
 
 impl Currency for Eth {
     fn as_inner(&self) -> U256 {
@@ -54,6 +61,13 @@ impl FromStr for Eth {
     }
 }
 
+impl Display for Eth {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let (eth, wei) = self.0.div_mod(U256::exp10(18));
+        f.write_fmt(format_args!("{}.{:0>18}eth", eth, wei.as_u64()))
+    }
+}
+
 #[cfg(test)]
 mod test_eth {
     use super::*;
@@ -77,6 +91,14 @@ mod test_eth {
 
         Ok(())
     }
+
+    #[test]
+    fn eth_to_str() -> Result<(), Box<dyn std::error::Error>> {
+        assert_eq!(Eth::from_str("10eth")?.to_string(), "10.000000000000000000eth");
+        assert_eq!(Eth::from_str("1500pwei")?.to_string(), "1.500000000000000000eth");
+
+        Ok(())
+    }
 }
 
 /// For CLI arguments that take amount of SCM tokens.
@@ -85,6 +107,12 @@ mod test_eth {
 /// i.e. `1scm` or `100asc` or others.
 #[derive(Copy, Clone, Eq, PartialEq, Hash, Debug)]
 pub struct Scm(U256);
+
+impl Scm {
+    pub fn new(inner: U256) -> Self {
+        Self(inner)
+    }
+}
 
 impl Currency for Scm {
     fn as_inner(&self) -> U256 {
@@ -126,6 +154,13 @@ impl FromStr for Scm {
     }
 }
 
+impl Display for Scm {
+    fn fmt(&self, f: &mut Formatter<'_>) -> std::fmt::Result {
+        let (eth, wei) = self.0.div_mod(U256::exp10(18));
+        f.write_fmt(format_args!("{}.{:0>18}scm", eth, wei.as_u64()))
+    }
+}
+
 #[cfg(test)]
 mod test_scm {
     use super::*;
@@ -146,6 +181,15 @@ mod test_scm {
         assert_eq!(Scm::from_str("5msc")?.0, U256::from_dec_str("5000000000000000")?);
         assert_eq!(Scm::from_str("5scm")?.0, U256::from_dec_str("5000000000000000000")?);
         assert_eq!(Scm::from_str("5scam")?.0, U256::from_dec_str("5000000000000000000")?);
+
+        Ok(())
+    }
+
+
+    #[test]
+    fn scm_to_str() -> Result<(), Box<dyn std::error::Error>> {
+        assert_eq!(Scm::from_str("10scm")?.to_string(), "10.000000000000000000scm");
+        assert_eq!(Scm::from_str("1500msc")?.to_string(), "1.500000000000000000scm");
 
         Ok(())
     }

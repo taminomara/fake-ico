@@ -1,7 +1,7 @@
 use ethcontract::prelude::*;
 
-use crate::cli::{Currency, Eth};
-use chrono::{NaiveDateTime, TimeZone, Utc};
+use crate::cli::{Currency, Eth, Scm};
+use chrono::{Local, NaiveDateTime, TimeZone, Utc};
 use ethcontract::batch::CallBatch;
 use futures::StreamExt as _;
 
@@ -21,13 +21,7 @@ pub enum IcoCommand {
 
     #[structopt(about = "Buy SCM")]
     Fund {
-        #[structopt(
-            short,
-            long,
-            about = "If ICO doesn't have enough tokens, buy all available ones"
-        )]
-        force: bool,
-        #[structopt(long, about = "Wrap eth if you don't have enough of it")]
+        #[structopt(long, about = "Wrap and approve eth if you don't have enough of it")]
         wrap_weth: bool,
         #[structopt(long, about = "Ensure that ICO is authorized to spend WETH")]
         approve_weth: bool,
@@ -57,10 +51,7 @@ impl IcoCommand {
 
                 let mut batch = CallBatch::new(web3.transport());
 
-                let state = contract
-                    .state()
-                    .block(current_block)
-                    .batch_call(&mut batch);
+                let state = contract.state().block(current_block).batch_call(&mut batch);
                 let left_eth = contract
                     .left_eth()
                     .block(current_block)
@@ -69,35 +60,29 @@ impl IcoCommand {
                     .left_scm()
                     .block(current_block)
                     .batch_call(&mut batch);
-                let scm = contract
-                    .scm()
-                    .block(current_block)
-                    .batch_call(&mut batch);
-                let weth = contract
-                    .weth()
-                    .block(current_block)
-                    .batch_call(&mut batch);
+                let scm = contract.scm().block(current_block).batch_call(&mut batch);
+                let weth = contract.weth().block(current_block).batch_call(&mut batch);
 
                 batch.execute_all(100).await;
 
                 let state = state.await.expect("state call failed");
                 match state {
-                    0x0 => println!("state: ongoing"),
-                    0x1 => println!("state: closed"),
-                    0x2 => println!("state: finished"),
-                    unknown => println!("state: unknown ({})", unknown),
+                    0x0 => println!("State: Ongoing"),
+                    0x1 => println!("State: Closed"),
+                    0x2 => println!("State: Finished"),
+                    unknown => println!("State: Unknown ({})", unknown),
                 };
 
                 println!(
-                    "left eth: {}",
-                    left_eth.await.expect("left_eth call failed")
+                    "Left ETH: {}",
+                    Eth::new(left_eth.await.expect("left_eth call failed"))
                 );
                 println!(
-                    "left scm: {}",
-                    left_scm.await.expect("left_scm call failed")
+                    "Left SCM: {}",
+                    Scm::new(left_scm.await.expect("left_scm call failed"))
                 );
-                println!("scm: {}", scm.await.expect("scm call failed"));
-                println!("weth: {}", weth.await.expect("weth call failed"));
+                println!("SCM: {:?}", scm.await.expect("scm call failed"));
+                println!("WETH: {:?}", weth.await.expect("weth call failed"));
 
                 if state != 0 {
                     let close_time = {
@@ -108,10 +93,10 @@ impl IcoCommand {
                             .await
                             .expect("close_time call failed")
                             .as_u64();
-                        Utc.from_utc_datetime(&NaiveDateTime::from_timestamp(timestamp as i64, 0))
+                        Local.from_utc_datetime(&NaiveDateTime::from_timestamp(timestamp as i64, 0))
                     };
 
-                    println!("close time: {}", close_time);
+                    println!("Close time: {}", close_time);
 
                     let finish_time = {
                         let timestamp = contract
@@ -121,32 +106,34 @@ impl IcoCommand {
                             .await
                             .expect("close_time call failed")
                             .as_u64();
-                        Utc.from_utc_datetime(&NaiveDateTime::from_timestamp(timestamp as i64, 0))
+                        Local.from_utc_datetime(&NaiveDateTime::from_timestamp(timestamp as i64, 0))
                     };
 
-                    println!("finish time: {}", finish_time);
+                    println!("Finish time: {}", finish_time);
                 }
             }
 
             IcoCommand::Balance { address, eth } => {
                 let address = address.unwrap_or(account.address());
 
-                let (method, currency) = if *eth {
-                    (contract.balance_eth(address), "wei")
+                if *eth {
+                    let balance = contract
+                        .balance_eth(address)
+                        .call()
+                        .await
+                        .expect("balance fetch failed");
+                    println!("ICO balance: {}", Eth::new(balance));
                 } else {
-                    (contract.balance_scm(address), "asc")
+                    let balance = contract
+                        .balance_scm(address)
+                        .call()
+                        .await
+                        .expect("balance fetch failed");
+                    println!("ICO balance: {}", Scm::new(balance));
                 };
-
-                let balance = method
-                    .call()
-                    .await
-                    .expect("balance fetch failed");
-
-                println!("{}{}", balance, currency);
             }
 
             IcoCommand::Fund {
-                force,
                 wrap_weth,
                 approve_weth,
                 funds,
@@ -162,42 +149,53 @@ impl IcoCommand {
                         .expect("balance_of call failed");
 
                     if balance < funds.as_inner() {
-                        println!("wrapping weth...");
+                        println!("Wrapping WETH");
                         weth.deposit()
                             .from(account.clone())
                             .value(funds.as_inner())
                             .send()
                             .await
                             .expect("deposit failed");
+                    } else {
+                        println!("WETH balance is sufficient, no need to wrap more");
                     }
                 }
 
                 if *approve_weth || *wrap_weth {
-                    println!("approving weth...");
-                    weth.approve(contract_address, funds.as_inner())
-                        .from(account.clone())
-                        .send()
+                    let allowance = weth
+                        .allowance(account.address(), contract_address)
+                        .call()
                         .await
-                        .expect("approve failed");
+                        .expect("balance_of call failed");
+
+                    if allowance < funds.as_inner() {
+                        println!("Approving WETH");
+                        weth.approve(contract_address, funds.as_inner())
+                            .from(account.clone())
+                            .send()
+                            .await
+                            .expect("approve failed");
+                    } else {
+                        println!("WETH allowance is sufficient, no need to approve more");
+                    }
                 }
 
-                if *force {
-                    contract
-                        .fund_any(funds.as_inner())
-                        .from(account)
-                        .send()
-                        .await
-                        .expect("fundAny call failed");
-                } else {
-                    contract
-                        .fund(funds.as_inner())
-                        .from(account)
-                        .send()
-                        .await
-                        .expect("fund call failed");
-                };
+                contract
+                    .fund(funds.as_inner())
+                    .from(account.clone())
+                    .send()
+                    .await
+                    .expect("fund call failed");
 
-                println!("done");
+                println!("Done");
+
+                let balance = contract
+                    .balance_scm(account.address())
+                    .call()
+                    .await
+                    .expect("balance fetch failed");
+
+                println!("ICO balance: {}", Scm::new(balance));
             }
 
             IcoCommand::Claim { wait } => {
@@ -207,10 +205,23 @@ impl IcoCommand {
 
                 contract
                     .claim()
-                    .from(account)
+                    .from(account.clone())
                     .send()
                     .await
                     .expect("fund call failed");
+
+                println!("Done");
+
+                let scm_address = contract.scm().call().await.unwrap();
+                let scm = crate::contracts::SCM::at(web3, scm_address);
+
+                let balance = scm
+                    .balance_of(account.address())
+                    .call()
+                    .await
+                    .expect("balance fetch failed");
+
+                println!("SCM balance: {}", Scm::new(balance));
             }
 
             IcoCommand::Wait => {
@@ -230,7 +241,7 @@ async fn wait_finish(web3: &Web3<Http>, contract: &crate::contracts::ICO) {
         .unwrap();
 
     if state == 0 {
-        println!("waiting for ICO to close");
+        println!("Waiting for ICO to close");
         contract
             .events()
             .ico_closed()
@@ -239,6 +250,7 @@ async fn wait_finish(web3: &Web3<Http>, contract: &crate::contracts::ICO) {
             .boxed()
             .next()
             .await;
+        println!("ICO closed");
     }
 
     let finish_time = {
@@ -254,7 +266,9 @@ async fn wait_finish(web3: &Web3<Http>, contract: &crate::contracts::ICO) {
     let now = Utc::now();
 
     if now < finish_time {
-        println!("waiting for ICO to finish");
+        println!("ICO will finish on {}", finish_time.with_timezone(&Local));
+        println!("Waiting for ICO to finish");
         tokio::time::sleep((finish_time - now).to_std().unwrap()).await;
+        println!("ICO finished");
     }
 }

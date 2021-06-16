@@ -45,19 +45,14 @@ pub enum ScmCommand {
 
 impl ScmCommand {
     pub async fn invoke(&self, account: Account, web3: &Web3<Http>) {
+        let account_address = account.address();
+
         let contract_address = crate::contracts::get_scm_address(web3).await;
         let contract = crate::contracts::SCM::at(web3, contract_address);
 
         match self {
             Self::Balance { address } => {
-                let balance = contract
-                    .balance_of(address.unwrap_or(account.address()))
-                    .from(account.address())
-                    .call()
-                    .await
-                    .expect("balance fetch failed");
-
-                println!("{}asc", balance);
+                Self::print_balance(address.unwrap_or(account_address), &contract).await;
             }
 
             Self::Transfer {
@@ -67,7 +62,7 @@ impl ScmCommand {
             } => {
                 contract
                     .transfer_from(
-                        owner.unwrap_or(account.address()),
+                        owner.unwrap_or(account_address),
                         *recipient,
                         funds.as_inner(),
                     )
@@ -75,17 +70,19 @@ impl ScmCommand {
                     .send()
                     .await
                     .expect("transfer failed");
+
+                println!("Done");
+                Self::print_balance(account_address, &contract).await;
             }
 
             Self::Allowance { owner, spender } => {
                 let allowance = contract
                     .allowance(*owner, *spender)
-                    .from(account.address())
                     .call()
                     .await
                     .expect("allowance fetch failed");
 
-                println!("{}asc", allowance);
+                println!("Allowance: {}", Scm::new(allowance));
             }
 
             Self::Approve { spender, value } => {
@@ -95,8 +92,20 @@ impl ScmCommand {
                     .send()
                     .await
                     .expect("approve failed");
+
+                println!("Done");
             }
         }
+    }
+
+    async fn print_balance(address: Address, contract: &crate::contracts::SCM) {
+        let balance = contract
+            .balance_of(address)
+            .call()
+            .await
+            .expect("balance fetch failed");
+
+        println!("SCM balance: {}", Scm::new(balance));
     }
 }
 
@@ -155,19 +164,14 @@ pub enum WethCommand {
 
 impl WethCommand {
     pub async fn invoke(&self, account: Account, web3: &Web3<Http>) {
+        let account_address = account.address();
+
         let contract_address = crate::contracts::get_weth_address(web3).await;
         let contract = crate::contracts::WETH9::at(web3, contract_address);
 
         match self {
             Self::Balance { address } => {
-                let balance = contract
-                    .balance_of(address.unwrap_or(account.address()))
-                    .from(account.address())
-                    .call()
-                    .await
-                    .expect("balance fetch failed");
-
-                println!("{}wei", balance);
+                Self::print_balance(address.unwrap_or(account_address), &contract).await;
             }
 
             Self::Transfer {
@@ -177,7 +181,7 @@ impl WethCommand {
             } => {
                 contract
                     .transfer_from(
-                        owner.unwrap_or(account.address()),
+                        owner.unwrap_or(account_address),
                         *recipient,
                         funds.as_inner(),
                     )
@@ -185,17 +189,19 @@ impl WethCommand {
                     .send()
                     .await
                     .expect("transfer failed");
+
+                println!("Done");
+                Self::print_balance(account_address, &contract).await;
             }
 
             Self::Allowance { owner, spender } => {
                 let allowance = contract
                     .allowance(*owner, *spender)
-                    .from(account.address())
                     .call()
                     .await
                     .expect("allowance fetch failed");
 
-                println!("{}wei", allowance);
+                println!("Allowance: {}", Eth::new(allowance));
             }
 
             Self::Approve { spender, value } => {
@@ -205,6 +211,8 @@ impl WethCommand {
                     .send()
                     .await
                     .expect("approve failed");
+
+                println!("Done");
             }
 
             Self::Deposit { amount } => {
@@ -215,6 +223,9 @@ impl WethCommand {
                     .send()
                     .await
                     .expect("deposit failed");
+
+                println!("Done");
+                Self::print_balance(account_address, &contract).await;
             }
 
             Self::Withdraw { amount } => {
@@ -224,7 +235,20 @@ impl WethCommand {
                     .send()
                     .await
                     .expect("withdraw failed");
+
+                println!("Done");
+                Self::print_balance(account_address, &contract).await;
             }
         }
+    }
+
+    async fn print_balance(address: Address, contract: &crate::contracts::WETH9) {
+        let balance = contract
+            .balance_of(address)
+            .call()
+            .await
+            .expect("balance fetch failed");
+
+        println!("WETH balance: {}", Eth::new(balance));
     }
 }
