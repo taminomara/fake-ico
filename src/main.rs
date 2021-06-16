@@ -5,6 +5,7 @@ use ethcontract::prelude::*;
 mod cli;
 mod contracts;
 mod erc20;
+mod ico;
 
 #[derive(StructOpt)]
 #[structopt(about = "Use CLI to spend your precious ETH and get some 💩")]
@@ -25,7 +26,7 @@ struct Opts {
 enum SubCommand {
     Scm(erc20::ScmCommand),
     Weth(erc20::WethCommand),
-    Ico,
+    Ico(ico::IcoCommand),
 }
 
 #[tokio::main]
@@ -39,7 +40,7 @@ async fn main() {
     match opts.subcommand {
         SubCommand::Scm(scm) => scm.invoke(account, &web3).await,
         SubCommand::Weth(weth) => weth.invoke(account, &web3).await,
-        SubCommand::Ico => todo!()
+        SubCommand::Ico(ico) => ico.invoke(account, &web3).await,
     };
 }
 
