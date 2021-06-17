@@ -81,6 +81,7 @@ impl IcoCommand {
                     "Left SCM: {}",
                     Scm::new(left_scm.await.expect("left_scm call failed"))
                 );
+                println!("ICO: {:?}", contract_address);
                 println!("SCM: {:?}", scm.await.expect("scm call failed"));
                 println!("WETH: {:?}", weth.await.expect("weth call failed"));
 
