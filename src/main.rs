@@ -33,8 +33,10 @@ enum SubCommand {
 async fn main() {
     let opts = Opts::from_args();
 
+    let url = std::env::var("ETH_TRANSPORT").unwrap_or(opts.transport);
+
     let account = get_account();
-    let transport = Http::new(&opts.transport).expect("http connection failed");
+    let transport = Http::new(&url).expect("http(s) connection failed");
     let web3 = Web3::new(transport);
 
     match opts.subcommand {
