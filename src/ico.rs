@@ -272,13 +272,7 @@ async fn wait_finish(web3: &Web3<Http>, contract: &crate::contracts::ICO) {
         tokio::time::sleep((finish_time - now).to_std().unwrap()).await;
     }
 
-    while {
-        0x2 != contract
-            .state()
-            .call()
-            .await
-            .unwrap()
-    } {
+    while contract.state().call().await.unwrap() != 0x2 {
         tokio::time::sleep(std::time::Duration::new(10, 0)).await;
     }
 
