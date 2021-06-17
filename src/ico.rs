@@ -171,7 +171,7 @@ impl IcoCommand {
 
                     if allowance < funds.as_inner() {
                         println!("Approving WETH");
-                        weth.approve(contract_address, funds.as_inner())
+                        weth.approve(contract_address, U256::exp10(18) * 10)
                             .from(account.clone())
                             .send()
                             .await
