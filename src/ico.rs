@@ -270,6 +270,18 @@ async fn wait_finish(web3: &Web3<Http>, contract: &crate::contracts::ICO) {
         println!("ICO will finish on {}", finish_time.with_timezone(&Local));
         println!("Waiting for ICO to finish");
         tokio::time::sleep((finish_time - now).to_std().unwrap()).await;
-        println!("ICO finished");
     }
+
+    while {
+        0x2 != contract
+            .state()
+            .block(BlockId::Number(BlockNumber::Number(current_block)))
+            .call()
+            .await
+            .unwrap()
+    } {
+        tokio::time::sleep(std::time::Duration::new(10, 0)).await;
+    }
+
+    println!("ICO is finished");
 }
