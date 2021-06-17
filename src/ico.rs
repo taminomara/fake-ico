@@ -15,15 +15,15 @@ pub enum IcoCommand {
     Balance {
         #[structopt(help = "Account we're fetching balance for (uses your account by default)")]
         address: Option<Address>,
-        #[structopt(long, about = "Display balance in ETH")]
+        #[structopt(long, help = "Display balance in ETH")]
         eth: bool,
     },
 
     #[structopt(about = "Buy SCM")]
     Fund {
-        #[structopt(long, about = "Wrap and approve eth if you don't have enough of it")]
+        #[structopt(long, help = "Wrap and approve eth if you don't have enough of it")]
         wrap_weth: bool,
-        #[structopt(long, about = "Ensure that ICO is authorized to spend WETH")]
+        #[structopt(long, help = "Ensure that ICO is authorized to spend WETH")]
         approve_weth: bool,
         #[structopt(help = "Number of ETH tokens to contribute to the ICO")]
         funds: Eth,
@@ -31,7 +31,7 @@ pub enum IcoCommand {
 
     #[structopt(about = "Claim purchased SCM")]
     Claim {
-        #[structopt(long, about = "If ICO is not finished, wait for it")]
+        #[structopt(long, help = "If ICO is not finished, wait for it")]
         wait: bool,
     },
 
