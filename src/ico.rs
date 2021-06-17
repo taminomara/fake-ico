@@ -275,7 +275,6 @@ async fn wait_finish(web3: &Web3<Http>, contract: &crate::contracts::ICO) {
     while {
         0x2 != contract
             .state()
-            .block(BlockId::Number(BlockNumber::Number(current_block)))
             .call()
             .await
             .unwrap()
