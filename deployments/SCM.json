@@ -230,5 +230,13 @@
     }
   ],
   "linkReferences": {},
-  "deployedLinkReferences": {}
+  "deployedLinkReferences": {},
+  "networks": {
+    "4": {
+      "events": {},
+      "links": {},
+      "address": "0xe4b9895E638f54C3beE2a3A78d6A297Cc03e0353",
+      "transactionHash": "0xb3effc37a662f7378249755fb87f7115944b92906d69b9d7e35f9998dc920487"
+    }
+  }
 }
