@@ -3,7 +3,6 @@ use ethcontract::prelude::*;
 ethcontract::contract!(pub "deployments/ICO.json");
 ethcontract::contract!(pub "deployments/SCM.json");
 ethcontract::contract!(pub "deployments/WETH9.json");
-ethcontract::contract!(pub "deployments/IERC20.json", contract=IERC20);
 
 pub async fn get_weth_address(web3: &Web3<Http>) -> Address {
     if let Ok(address) = std::env::var("WETH_ADDRESS") {
