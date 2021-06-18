@@ -23,6 +23,7 @@ cargo run -- scm balance  # your WETH balance
 # Other subcommands are balance, transfer, 
 # allowance, approve, deposit, withdraw
 
+# Interact with ICO:
 cargo run -- ico info  # basic info about ICO
 cargo run -- ico balance  # how many SCM tokens you can claim
 cargo run -- ico fund 1eth --wrap-weth  # purchase SCM
