@@ -33,4 +33,5 @@ cargo run -- ico claim --wait  # claim SCM after ICO is finished
 Whenever CLI expects amount of money (i.e. `weth transfer` or `ico fund`),
 you can supply a positive integer with an optional suffix such as `eth`, `wei`, `gwei`
 for ether and `scm`, `asc` (atta-scam), `nsc` (nano-scam) for scam token.
-CLI does not support floats at the moment.
+If you supply a value without any suffix, it's assumed to be in `wei` for ether
+and in `asc` for scam. CLI does not support floats at the moment.
